@@ -4,7 +4,7 @@
 # JOB_EXEC_USER=root
 
 # SCHEDULE is same as cron scheudle
-# SCHEDULE: * * * * *
+# SCHEDULE:* * * * *
 SCHEDULE:
 
 # EXECUTE_COMMAND=/home/hoge/test.sh
