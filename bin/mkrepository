@@ -46,7 +46,7 @@ fi
 echo ""
 echo "-------------------------------------------------------------"
 echo "Repository create succesfully. "
-echo "Repository Directory is  ${ROOT}/repository/${REPOSITORYNAME} "
+echo "Repository Directory is ${ROOT}/repository/${REPOSITORYNAME} "
 echo "-------------------------------------------------------------"
 
 exit 0
