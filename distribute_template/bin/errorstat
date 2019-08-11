@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+
+if [ ! -d "${ROOT}/que/error" ];then
+ echo "ERROR user is not correct, please execute this command by job user"
+exit 1
+fi
+
+echo "ERROR LIST"
+for FILE in `ls -t ${ROOT}/que/error`
+do
+  cat ${ROOT}/que/error/${FILE} | sort -r -k 3
+done

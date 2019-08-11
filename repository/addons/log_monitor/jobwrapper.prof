@@ -1,0 +1,28 @@
+# Jobwrapper prof
+
+# SCHEDULE is same as cron scheudle
+# SCHEDULE: * * * * *
+SCHEDULE:* * * * *
+
+# EXECUTE_COMMAND=/home/hoge/test.sh
+# EXECUTE_COMMAND=${JOBWRAPPER_HOME}/bat/test.sh
+EXECUTE_COMMAND="${JOBWRAPPER_HOME}/bat/log_monitor.sh"
+RECOVERY_COMMAND=""
+
+# Message and resource lock function is optional
+# Below is example
+#
+# 1. TRIGGER MESSAGE
+# INPUT_MESSAGE="jobnetA_fin"
+INPUT_MESSAGE=""
+
+# 2. OUTPUT MESSAGE to localhost
+# OUTPUT_MESSAGE="jobnetB_fin"
+#
+# 3. OUTPUT MESSAGE to other endpoint
+# OUTPUT_MESSAGE="global::jobnetB_fin"
+# OUTPUT_MESSAGE="endpointA(IP or FQDN)::jobnetB_fin"
+OUTPUT_MESSAGE=""
+
+# JOB_EXEC_USER=root
+JOB_EXEC_USER=root

@@ -1,0 +1,97 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+
+REPOSITORY=$1
+JOBWRAPPER=$2
+JOBWRAPPER_HOME=${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}
+CONTROLLER_EXE=${JOBWRAPPER_HOME}/controller.sh
+PROF=${JOBWRAPPER_HOME}/jobwrapper.prof
+UTL_SCHEDULE=${ROOT}/utilities/schedule
+DEL_L="${ROOT}/utilities/log_delete.sh"
+DEL_Q="${ROOT}/utilities/que_delete.sh"
+SNAP_SHOT="${ROOT}/utilities/snapshot.sh"
+
+if [ "${REPOSITORY}" = "" -o "${JOBWRAPPER}" = "" ];then
+ echo "usage: enable_jobwrapper.sh <REPOSITORY> <JOBWRAPPER>"
+ exit 1
+fi
+
+if [ ! -f ${JOBWRAPPER_HOME}/jobwrapper.prof ];then
+ echo "jobwrapper is not exist"
+ exit 1
+fi
+
+if [ ! -f ${JOBWRAPPER_HOME}/controller.sh ];then
+ echo "controller is not exist"
+ echo "please execute \"mkcontroller.sh ${REPOSITORY} ${JOBWRAPPER}\""
+ exit 1
+fi
+
+
+## jobwrapper prof input
+SCHEDULE_CHECK=`grep SCHEDULE ${PROF} | grep -v \# | awk -F [:] '{print $1}'`
+
+## crontab update
+if [ "${SCHEDULE_CHECK}" = "" ];then
+ echo "schedule is not defined, ${JOBWRAPPER_HOME}/jobwrapper.prof" 
+ exit 1
+fi
+
+crontab -l > ${JOBWRAPPER_HOME}/.crontab_tmp
+chmod 766 ${JOBWRAPPER_HOME}/.crontab_tmp
+
+if [ $? != 0 ];then
+  echo "maybe permission is wrong ${JOBWRAPPER_HOME}/.crontab_tmp"
+  exit 1
+fi
+
+ENTRY_CHECK=`grep ${CONTROLLER_EXE} ${JOBWRAPPER_HOME}/.crontab_tmp | awk '{print $1}'`
+
+if [ "${ENTRY_CHECK}" ];then
+ echo "jobwrapper has already enabled" 
+ exit 1
+fi
+
+echo "`grep SCHEDULE ${PROF} | grep -v \# | awk -F [:] '{print $2}'` ${CONTROLLER_EXE} > /dev/null 2>&1" >> ${JOBWRAPPER_HOME}/.crontab_tmp
+
+
+# utility check
+QUE_UTILITY_CHECK=`grep "${DEL_Q}" ${JOBWRAPPER_HOME}/.crontab_tmp`
+if [ "${QUE_UTILITY_CHECK}" = "" ];then
+ echo "`grep QUE_SCHEDULE ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${DEL_Q} > /dev/null 2>&1" >> ${JOBWRAPPER_HOME}/.crontab_tmp
+fi
+
+LOG_UTILITY_CHECK=`grep "${DEL_L}" ${JOBWRAPPER_HOME}/.crontab_tmp`
+if [ "${LOG_UTILITY_CHECK}" = "" ];then
+ echo "`grep LOG_SCHEDULE ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${DEL_L} > /dev/null 2>&1" >> ${JOBWRAPPER_HOME}/.crontab_tmp
+fi
+
+SNAP_UTILITY_CHECK=`grep "${SNAP_SHOT}" ${JOBWRAPPER_HOME}/.crontab_tmp`
+if [ "${SNAP_UTILITY_CHECK}" = "" ];then
+ echo "`grep SNAP_SHOT ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${SNAP_SHOT} > /dev/null 2>&1" >> ${JOBWRAPPER_HOME}/.crontab_tmp
+fi
+
+# crontab crontab_new
+crontab ${JOBWRAPPER_HOME}/.crontab_tmp
+
+if [ $? != 0 ];then
+ echo "your schedule entry is not accurate."
+ echo "please check schedule and redistribute jobwrapper"
+ echo "${JOBWRAPPER_HOME}/jobwrapper.prof"
+ rm  ${JOBWRAPPER_HOME}/.crontab_tmp
+ exit 1
+fi
+
+echo "-------------------------------------------------------------"
+echo "JOBWRAPPER:${JOBWRAPPER} enabled succesfully"
+echo "please check crontab -l "
+echo "-------------------------------------------------------------"
+
+rm  ${JOBWRAPPER_HOME}/.crontab_tmp
+
+exit 0

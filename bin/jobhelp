@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+clear
+more ${ROOT}/bin/doc/help.txt

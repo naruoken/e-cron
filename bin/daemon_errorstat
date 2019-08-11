@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+CHECK=`ls -t ${ROOT}/que/daemon_error`
+
+if [ "${CHECK}" = "" ];then
+  echo "No error"
+fi
+for FILE in `ls -tr ${ROOT}/que/daemon_error`
+do
+  cat ${ROOT}/que/daemon_error/${FILE} 
+done

@@ -1,0 +1,102 @@
+#!/bin/sh
+
+## global conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+ . ${SCRIPT_DIR}/../global.conf
+
+## process check
+if [ -f /tmp/ecron_mirrord_lock ];then
+  exit 0
+else
+  touch /tmp/ecron_mirrord_lock
+fi
+
+
+## global.conf load
+startup () {
+ . ${SCRIPT_DIR}/../global.conf
+}
+trap startup HUP
+startup
+
+DAEMON_LOG=${ROOT}/log/mirrord.log
+echo "`date +%Y/%m/%d` `date +%H:%M:%S` mirrord startd" >>  ${DAEMON_LOG}
+
+while true
+do
+ . ${SCRIPT_DIR}/../global.conf
+ UNAME=`uname -n`
+ ERROR_QUE=${ROOT}/que/daemon_error/${UNAME}_`date +%Y%m%d`
+
+ while read RHOST
+ do
+
+ ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
+ SSH_PORT=`echo ${RHOST} | awk  -F":" '{print $2}'`
+ ENDPOINT_STATUS_QUE=${ROOT}/que/endpoint_status/${ENDPOINT}_mirror
+
+
+  ##rsync from execution endpoint to console server
+  . ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+  ENDPOINT_SYNC_CHECK=""
+
+  if [ "${ENDPOINT}" != "localhost" ];then
+
+    if [ ! -f ${ROOT}/que/daemon_error/${ENDPOINT}_monitor_error ];then
+
+      rsync --timeout=5 -e "ssh -p ${SSH_PORT}" -alv --delete ${ENDPOINT}:${USER_ROOT}/log/ ${ROOT}/endpoints/${ENDPOINT}/log  > /dev/null 2>&1
+      rsync --timeout=5 -e "ssh -p ${SSH_PORT}" -alv --delete ${ENDPOINT}:${USER_ROOT}/que/ ${ROOT}/endpoints/${ENDPOINT}/que  > /dev/null 2>&1
+      ENDPOINT_SYNC_CHECK=$?
+      SEND_MESSAGE_CHECK=`ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} ls ${USER_ROOT}/que/message/*::*`
+
+      if [ "${SEND_MESSAGE_CHECK}" ];then
+        cp ${ROOT}/endpoints/${ENDPOINT}/que/message/*::* ${ROOT}/que/send_message/
+        rm ${ROOT}/endpoints/${ENDPOINT}/que/message/*::*
+        ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} rm ${USER_ROOT}/que/message/*::*
+      fi
+
+    fi
+
+  else
+
+    rsync --timeout=5 -alv --delete ${USER_ROOT}/log/ ${ROOT}/endpoints/${ENDPOINT}/log  > /dev/null 2>&1
+    rsync --timeout=5 -alv --delete ${USER_ROOT}/que/ ${ROOT}/endpoints/${ENDPOINT}/que  > /dev/null 2>&1
+    ENDPOINT_SYNC_CHECK=$?
+
+    SEND_MESSAGE_CHECK=`ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} ls ${USER_ROOT}/que/message/*::*`
+    if [ "${SEND_MESSAGE_CHECK}" ];then
+      cp ${ROOT}/endpoints/${ENDPOINT}/que/message/*::* ${ROOT}/que/send_message/
+      rm ${ROOT}/endpoints/${ENDPOINT}/que/message/*::*
+      rm ${USER_ROOT}/que/message/*::*
+    fi
+
+  fi
+
+  if [ "${ENDPOINT_SYNC_CHECK}" != 0 ];then
+
+     echo "${ENDPOINT} `date +%Y/%m/%d` `date +%H:%M:%S` ERROR que_mirror_failed" >  ${ENDPOINT_STATUS_QUE}
+
+     if [ ! -f ${ROOT}/que/daemon_error/${ENDPOINT}_mirror_error ];then
+
+       touch ${ROOT}/que/daemon_error/${ENDPOINT}_mirror_error
+       echo "`date +%Y/%m/%d` `date +%H:%M:%S` ecron_mirrord: ${ENDPOINT} que mirror failed" >> ${ERROR_QUE}
+
+     fi
+
+  else
+
+     echo "${ENDPOINT} `date +%Y/%m/%d` `date +%H:%M:%S` SUCCESS que_mirrored " > ${ENDPOINT_STATUS_QUE}
+
+     if [ -f ${ROOT}/que/daemon_error/${ENDPOINT}_mirror_error ];then
+       rm  ${ROOT}/que/daemon_error/${ENDPOINT}_mirror_error
+     fi
+
+  fi
+
+
+ done < ${ROOT}/map.conf
+
+ sleep 12
+
+done

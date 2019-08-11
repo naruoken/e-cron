@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+REPOSITORYNAME=$1
+
+if [ "${REPOSITORYNAME}" = "" ];then
+  echo "please input repository name"
+  read REPOSITORYNAME
+fi
+
+if [ -d ${ROOT}/repository/${REPOSITORYNAME} ];then
+ echo "repository is already exist"
+ exit 1
+fi
+
+if [ "$REPOSITORYNAME" = "" ];then
+ echo "repository name is null"
+ exit 1
+fi
+
+mkdir -p ${ROOT}/repository/${REPOSITORYNAME}
+
+if [ $? != 0 ];then
+ echo "ERROR you can't create ${ROOT}/repository/${REPOSITORYNAME}"
+ exit 1
+fi
+
+chmod 755 ${ROOT}/repository/${REPOSITORYNAME}
+
+if [ $? != 0 ];then
+ echo "ERROR you can't change permission ${ROOT}/repository/${REPOSITORYNAME}"
+ exit 1
+fi
+
+echo ""
+echo "-------------------------------------------------------------"
+echo "Repository create succesfully. "
+echo "Repository Directory is  ${ROOT}/repository/${REPOSITORYNAME} "
+echo "-------------------------------------------------------------"
+
+exit 0

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+touch ${SCRIPT_DIR}/.crontab_tmp
+
+if [ $? != 0 ];then
+  echo "maybe permission is wrong ${SCRIPT_DIR}/.crontab_tmp"
+  exit 1
+fi
+
+#crontab update
+crontab ${SCRIPT_DIR}/.crontab_tmp
+
+if [ $? != 0 ];then
+ echo "disable was failed, please check cron"
+ exit 1
+fi
+
+echo "-------------------------------------------------------------"
+echo "ALL jobwrapper disabled succesfully"
+echo "-------------------------------------------------------------"
+
+rm ${SCRIPT_DIR}/.crontab_tmp
+
+exit 0

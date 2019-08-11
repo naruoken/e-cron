@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+REPOSITORY=$1
+JOBWRAPPER=$2
+JOBWRAPPER_HOME=${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}
+CONTROLLER_EXE=${JOBWRAPPER_HOME}/controller.sh
+PROF=${JOBWRAPPER_HOME}/jobwrapper.prof
+
+if [ "${REPOSITORY}" = "" -o "${JOBWRAPPER}" = "" ];then
+ echo "usage: disable_jobwrapper.sh <REPOSITORY> <JOBWRAPPER>"
+ exit 1
+fi
+
+if [ ! -f ${JOBWRAPPER_HOME}/jobwrapper.prof ];then
+ echo "jobwrapper is not exist"
+ exit 1
+fi
+
+crontab -l | grep -v ${CONTROLLER_EXE} > ${JOBWRAPPER_HOME}/.crontab_tmp
+
+if [ $? != 0 ];then
+  echo "maybe permission is wrong ${JOBWRAPPER_HOME}/.crontab_tmp"
+  exit 1
+fi
+
+#crontab update
+crontab ${JOBWRAPPER_HOME}/.crontab_tmp
+
+if [ $? != 0 ];then
+ echo "disable was failed, please check cron"
+ exit 1
+fi
+
+echo "-------------------------------------------------------------"
+echo "JOBWRAPPER:${JOBWRAPPER} disabled succesfully"
+echo "please check crontab -l "
+echo "-------------------------------------------------------------"
+
+rm ${JOBWRAPPER_HOME}/.crontab_tmp
+
+exit 0

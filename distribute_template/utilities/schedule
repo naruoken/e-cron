@@ -1,0 +1,3 @@
+LOG_SCHEDULE:10 1 * * *
+QUE_SCHEDULE:15 1 * * *
+SNAP_SHOT:* * * * *

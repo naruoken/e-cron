@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+REPOSITORY_JOBWRAPPER=$1
+JOBWRAPPER_HOME=${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}
+CONTROLLER=${JOBWRAPPER_HOME}/controller.sh
+
+if [ "${REPOSITORY_JOBWRAPPER}" = "" ];then
+ echo "usage is following"
+ echo "mkcontroller <REPOSITORY>/<JOBWRAPPER>"
+ exit 1
+fi
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+if [ ! -f ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/jobwrapper.prof ];then
+ echo "jobwrapper is not exist"
+ exit 1
+fi
+
+
+## jobwrapper prof load
+grep -v SCHEDULE ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/jobwrapper.prof > ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/.jobwrapper_tmp
+. ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/.jobwrapper_tmp
+
+if [ "$EXECUTE_COMMAND" = "" ];then
+ echo "ERROR EXECUTE_COMMAND is not defined"
+ exit 1
+fi
+
+SCHEDULE_CHECK=`grep SCHEDULE ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/jobwrapper.prof | grep -v \# | awk -F [:] '{print $1}'`
+
+## crontab update
+if [ "${SCHEDULE_CHECK}" = "" ];then
+ echo "schedule is not defined"
+ exit 1
+fi
+
+## controller create
+if [ -f ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/controller.sh ];then
+ echo "already exist controller file ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/controller.sh"
+ exit 1
+fi
+
+ln -s ${ROOT}/template/_controller.sh ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/controller.sh
+
+if [ $? != 0 ];then
+  echo "fail to create controller.sh"
+fi
+
+echo "-------------------------------------------------------------"
+echo "JOBWRAPPER:${JOBWRAPPER} controller created succesfully"
+echo "-------------------------------------------------------------"
+
+exit 0

@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# globa.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+REPOSITORY_JOBWRAPPER=$1
+ENDPOINT=$2
+
+if [ "${REPOSITORY_JOBWRAPPER}" = "" -o "${ENDPOINT}" = "" ];then
+  echo "usage is following"
+  echo "disable_jobwrapper <REPOSITORY>/<JOBWRAPPER> <ENDPOINT>"
+  exit 1
+fi
+
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+
+if [ ! -d ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} ];then
+ echo "no such jobwrapper ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}"
+ exit 1
+fi
+
+
+## conf load
+. ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+
+
+## execute endpoint's disable_jobwrapper
+
+if [ "${ENDPOINT}" != "localhost" ];then
+  echo "access to ${ENDPOINT}"
+  ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} ${USER_ROOT}/bin/disable_jobwrapper ${REPOSITORY} ${JOBWRAPPER}
+else
+  echo "access to ${ENDPOINT}"
+  ${USER_ROOT}/bin/disable_jobwrapper ${REPOSITORY} ${JOBWRAPPER}
+fi
+
+
+## update jobwrapper_list
+if [ $? = 0 ];then
+
+  if [ -f ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list ];then
+
+    grep  -v "^${REPOSITORY} ${JOBWRAPPER}:" ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list > ${ROOT}/endpoints/${ENDPOINT}/.jobwrapper_list.tmp
+    echo "${REPOSITORY} ${JOBWRAPPER}: disabled" >> ${ROOT}/endpoints/${ENDPOINT}/.jobwrapper_list.tmp
+    cp -f ${ROOT}/endpoints/${ENDPOINT}/.jobwrapper_list.tmp ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list
+
+  else 
+
+    echo "${REPOSITORY} ${JOBWRAPPER}: disabled" > ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list
+
+  fi
+else
+  echo "failed to disable ${ENDPOINT} ${JOBWRAPPER}"
+  exit 1
+fi   
+
+exit 0

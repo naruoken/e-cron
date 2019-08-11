@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+echo "Jobwrapper list (repository/jobwrapper)"
+echo "-------------------------------"
+echo ""
+for REPOSITORY in `ls ${ROOT}/repository`
+do
+
+  for JOBWRAPPER in `ls ${ROOT}/repository/$REPOSITORY`
+  do
+    echo "$REPOSITORY/$JOBWRAPPER"
+    echo " |-dir: ${ROOT}/${REPOSITORY}/${JOBWRAPPER}"
+    echo ""
+  done
+  
+done
+echo "-------------------------------"
+exit 0

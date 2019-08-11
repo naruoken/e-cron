@@ -1,0 +1,126 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+ENDPOINT=$1
+
+
+if [ "${ENDPOINT}" = "" ];then
+  echo "usage is following"
+  echo "add_endpoint <ENDPOINT>"
+  exit 1
+fi
+
+
+## endpoint dir create
+if [ ! -d "${ROOT}/endpoints/${ENDPOINT}" ];then
+  FLAG=NEW
+  echo "please input endpoint ssh port number(default is port:22)"
+  read SSH_PORT
+
+  if [ "${SSH_PORT}" = "" ];then
+    SSH_PORT=22
+  fi
+
+  ## check endpoint
+
+  if [ "${ENDPOINT}" != "localhost" ];then
+
+    USER_HOME=`ssh $ENDPOINT echo $HOME`
+    USER_ROOT=$USER_HOME/e-cron
+    ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} ls ${USER_ROOT} 2> /dev/null
+
+    if [ $? != 0 ];then
+
+      ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} mkdir -p ${USER_ROOT}
+      ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} chown ejobmgr ${USER_ROOT}
+      scp -o "ConnectTimeout 5" -P ${SSH_PORT} -pr ${ROOT}/distribute_template/* @${ENDPOINT}:${USER_ROOT}/
+
+      if [ $? != 0 ];then
+        echo "you must set ssh key authentication"
+        echo "please use set /home/ejobmgr/.ssh/authorized_keys"
+        echo "see detail -> http://www.e-cron.org/guideline.html"
+        exit 1
+      fi
+
+    fi
+
+    echo  "ROOT=${USER_ROOT}" > /tmp/ecron_user_root.tmp
+    scp -o "ConnectTimeout 5" -P ${SSH_PORT} /tmp/ecron_user_root.tmp  @${ENDPOINT}:${USER_ROOT}/.root
+
+
+  else
+
+    if [ ! -d ${USER_ROOT} ];then
+      USER_ROOT=${HOME}/e-cron
+      mkdir  ${USER_ROOT}
+      chown ejobmgr  ${USER_ROOT}
+      cp -pr ${ROOT}/distribute_template/* ${USER_ROOT}/
+
+      if [ $? != 0 ];then
+        echo "ERROR cp -pr ${ROOT}/distribute_template/* ${USER_ROOT}/ !!"
+        rm -rf ${ROOT}/endpoints/${ENDPOINT}
+        exit 1
+      fi
+
+      echo "ROOT=${USER_ROOT}" > ${USER_ROOT}/.root
+
+    fi
+
+  fi
+
+  ## create dir
+  mkdir -p ${ROOT}/endpoints/${ENDPOINT}
+
+  if [ $? != 0 ];then
+    echo "ERROR you can't create ${ROOT}/endpoints/${ENDPOINT}"
+    exit 1
+  fi
+
+  cp -pr ${ROOT}/distribute_template/* ${ROOT}/endpoints/${ENDPOINT}/
+  echo "SSH_PORT=${SSH_PORT}" > ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+  echo "USER_ROOT=${USER_ROOT}" >>  ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+  chmod 755  ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+
+fi
+
+## key check
+
+. ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+${ROOT}/bin/keycheck ${ENDPOINT} ${SSH_PORT} > /dev/null 2>&1
+if [ $? != 0 ];then
+  echo "${ENDPOINT} key check failed!"
+  echo "you must set ssh key authentication"
+  echo "please set /home/ejobmgr/.ssh/authorized_keys"
+  echo "see detail -> http://www.e-cron.org/guideline.html"
+  exit 1
+fi
+
+## map.conf update
+echo "${ENDPOINT}:${SSH_PORT}" >> ${ROOT}/map.conf
+
+
+## daemon check
+${ROOT}/bin/check_ecron_daemon > /dev/null 2>&1
+
+if [ $? != 0 ];then
+  echo "fail to start e-cron daemon !!"
+  exit 1
+fi
+  
+echo "-----------------------------------"
+echo "${ENDPOINT} is succesfully added"
+echo "-----------------------------------"
+
+exit 0

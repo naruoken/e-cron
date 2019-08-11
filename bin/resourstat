@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+ENDPOINT=$1
+if [ "${ENDPOINT}" = "" ];then
+ echo "usage:resourstat <ENDPOINT>"
+ exit 1 
+fi
+
+
+if [ ! -d ${ROOT}/endpoints/${ENDPOINT} ];then
+ echo "${ENDPOINT} is not exist"
+ exit 1
+fi
+
+
+#load endpoint.conf
+. ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+
+if [ "${ENDPOINT}" != "localhost" ];then
+  ssh -p ${SSH_PORT} ${ENDPOINT} ${USER_ROOT}/bin/resourstat
+else
+  ${USER_ROOT}/bin/resourstat
+fi
+
+exit 0
+
+

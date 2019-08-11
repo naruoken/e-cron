@@ -1,0 +1,79 @@
+#!/bin/sh
+
+## global conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+ . ${SCRIPT_DIR}/../global.conf
+
+## process check
+if [ -f /tmp/ecron_messaged_lock ];then
+  exit 0
+else
+  touch /tmp/ecron_messaged_lock
+fi
+
+
+## global.conf load
+startup () {
+ . ${SCRIPT_DIR}/../global.conf
+}
+trap startup HUP
+startup
+
+DAEMON_LOG=${ROOT}/log/messaged.log
+echo "`date +%Y/%m/%d` `date +%H:%M:%S` messaged startd" >>  ${DAEMON_LOG}
+
+while true
+do
+ ## SEND MESSAGE TO END POINT
+
+ while read RHOST
+ do
+
+ ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
+ SSH_PORT=`echo ${RHOST} | awk  -F":" '{print $2}'`
+ ENDPOINT_STATUS_QUE=${ROOT}/que/endpoint_status/${ENDPOINT}_mirror
+
+
+  . ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+  ENDPOINT_SYNC_CHECK=""
+
+
+  if [ ! -f ${ROOT}/que/daemon_error/${ENDPOINT}_monitor_error ];then
+    for FILE in `ls ${ROOT}/que/send_message/*::* | xargs -i basename {}`
+    do
+      MESSAGE_TO=`echo ${FILE} | awk  -F"::" '{print $1}'`
+      MESSAGE=`echo ${FILE} | awk  -F"::" '{print $2}'`
+
+      if [ "${MESSAGE_TO}" = "global" -o  "${MESSAGE_TO}" = "${ENDPOINT}" ];then
+
+        if [ "${ENDPOINT}" != "localhost" ];then
+          scp -o "ConnectTimeout 5" -P ${SSH_PORT} ${ROOT}/que/send_message/${FILE} @${ENDPOINT}:${USER_ROOT}/que/message/${MESSAGE}
+          ENDPOINT_SYNC_CHECK=$?
+
+          if [ "${ENDPOINT_SYNC_CHECK}" != 0 ];then
+             echo "`date +%Y/%m/%d` `date +%H:%M:%S` ecron_mirrord: ${ENDPOINT} message copy failed" >> ${ERROR_QUE}
+          else
+             echo "`date +%Y/%m/%d` `date +%H:%M:%S` ecron_mirrord: ${MESSAGE} sent to ${ENDPOINT}" >> ${DAEMON_LOG}
+          fi
+
+        else
+          cp ${ROOT}/que/send_message/${FILE} @${ENDPOINT}:${USER_ROOT}/que/message/${MESSAGE}
+          echo "`date +%Y/%m/%d` `date +%H:%M:%S` ecron_mirrord: ${MESSAGE} sent to ${ENDPOINT}" >> ${DAEMON_LOG}
+        fi
+      fi
+
+    done
+
+  fi
+
+ done < ${ROOT}/map.conf
+
+ for FILE in `ls ${ROOT}/que/send_message/*::* | xargs -i basename {}`
+ do
+   rm ${ROOT}/que/send_message/${FILE}
+ done
+
+ sleep 4
+
+done

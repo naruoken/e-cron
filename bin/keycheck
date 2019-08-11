@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+ENDPOINT=$1
+SSH_PORT=$2
+
+if [ "${ENDPOINT}" = "" -o "${SSH_PORT}" = "" ];then
+ echo "usage:keycheck.sh <ENDPOINT> <SSH_PORT>"
+ exit 1
+fi
+
+## key check
+
+if [ "${ENDPOINT}" != "localhost" ];then
+  UNAME=`uname -n`
+  KEY_CHECK=`ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} cat /home/ejobmgr/.ssh/authorized_keys | grep ${UNAME} | grep ejobmgr`
+
+  if [ "${KEY_CHECK}" = "" ];then
+    echo "please define key authentication in .ssh/authorized_keys "
+    exit 1
+  fi
+fi
+
+echo "--------------------------"
+echo "keycheck successfully done"
+echo "-------------------------"
+
+exit 0
+

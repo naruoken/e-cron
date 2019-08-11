@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+REPOSITORY=$1
+
+
+if [ "${REPOSITORY}" = "" ];then
+  echo "usage is following"
+  echo "rm_repository ${REPOSITORY>"
+  exit 1
+fi
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+if [ ! -d "${ROOT}/repository/${REPOSITORY}" ];then
+  echo "ERROR no such repository"
+  exit 1
+fi
+
+JOBWRAPPER_CHECK=`ls ${ROOT}/repositoy/${REPOSITORY} | wc -l`
+
+if [ ! ${JOBWRAPPER_CHECK} -eq 0 ];then
+  echo "please rm jobwrapper first using \"rm_jobwrapper\" command"
+  exit 1
+fi
+
+## jobwrapper input
+echo "You will delete ${REPOSITORY},is it OK?"
+echo "If no problem please type \"yes\""
+read ANSWER
+
+if [ ! "${ANSWER}" = "yes" ];then
+  echo "${REPOSITORY}/${JOBWRAPPER} is not deleted"
+  exit 1
+fi
+
+
+while read RHOST
+do
+  ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
+
+  if [ -d ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} ];then
+    . ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+    ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} rm -rf ${USER_ROOT}/repository/${REPOSITORY}
+    rm -rf ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}
+  fi
+
+done < ${ROOT}/map.conf
+
+rm -rf ${ROOT}/repository/${REPOSITORY}
+echo "-------------------------------------------------------------"
+echo "${REPOSITORY} deleted succesfully. "
+echo "-------------------------------------------------------------"
+exit 0
+
+exit 0

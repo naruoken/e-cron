@@ -1,0 +1,98 @@
+#!/bin/sh
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+UTL_SCHEDULE=${ROOT}/utilities/schedule
+DAEMON_ENT=${ROOT}/utilities/ecron_daemon_check.sh
+LOG_DEL_ENT=${ROOT}/utilities/util_log_delete.sh
+LOG_ROTATE_ENT=${ROOT}/utilities/log_rotate.sh
+QUE_DEL_ENT=${ROOT}/utilities/que_delete.sh
+
+## daemon check
+for DAEMON in ecron_mirrord
+do
+
+  PID=`ps -ef | grep ${DAEMON} | grep -v grep | awk '{print $2}'`
+  if [ "${PID}" = "" ];then
+    if [ -f /tmp/${DAEMON}_lock ];then
+      rm /tmp/${DAEMON}_lock 
+    fi
+    ${ROOT}/sbin/${DAEMON} &
+    sleep 1
+  fi
+
+  PID=`ps -ef | grep ${DAEMON} | grep -v grep | awk '{print $2}'`
+  if [ "${PID}" = "" ];then
+    echo "cannnot start ${DAEMON}"
+  fi
+
+done
+
+## create cron entry
+
+crontab -l > ${ROOT}/bin/.crontab
+
+DAEMON_UTILITY_CHECK=`grep "${DAEMON_ENT}" ${ROOT}/bin/.crontab`
+
+if [ "${DAEMON_UTILITY_CHECK}" = "" ];then
+  echo "`grep DAEMON_CHECK ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${DAEMON_ENT} > /dev/null 2>&1" >> ${ROOT}/bin/.crontab
+  crontab ${ROOT}/bin/.crontab
+
+  if [ $? != 0 ];then
+    echo "your schedule entry is not accurate."
+    echo "please check schedule and retry"
+    echo "${UTL_SCHEDULE}"
+  fi
+
+fi
+
+LOG_DEL_CHECK=`grep "${LOG_DEL_ENT}" ${ROOT}/bin/.crontab`
+
+if [ "${LOG_DEL_CHECK}" = "" ];then
+  echo "`grep LOG_DEL_SCHEDULE ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${LOG_DEL_ENT} > /dev/null 2>&1" >> ${ROOT}/bin/.crontab
+  crontab ${ROOT}/bin/.crontab
+
+  if [ $? != 0 ];then
+    echo "your schedule entry is not accurate."
+    echo "please check schedule and retry"
+    echo "${UTL_SCHEDULE}"
+  fi
+
+fi
+
+LOG_ROTATE_CHECK=`grep "${LOG_ROTATE_ENT}" ${ROOT}/bin/.crontab`
+
+if [ "${LOG_ROTATE_CHECK}" = "" ];then
+  echo "`grep LOG_ROTATE_SCHEDULE ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${LOG_ROTATE_ENT} > /dev/null 2>&1" >> ${ROOT}/bin/.crontab
+  crontab ${ROOT}/bin/.crontab
+
+  if [ $? != 0 ];then
+    echo "your schedule entry is not accurate."
+    echo "please check schedule and retry"
+    echo "${UTL_SCHEDULE}"
+  fi
+
+fi
+
+QUE_DEL_CHECK=`grep "${QUE_DEL_ENT}" ${ROOT}/bin/.crontab`
+
+if [ "${QUE_DEL_CHECK}" = "" ];then
+  echo "`grep QUE_DEL_SCHEDULE ${UTL_SCHEDULE}| awk -F [:] '{print $2}'` ${QUE_DEL_ENT} > /dev/null 2>&1" >> ${ROOT}/bin/.crontab
+  crontab ${ROOT}/bin/.crontab
+
+  if [ $? != 0 ];then
+    echo "your schedule entry is not accurate."
+    echo "please check schedule and retry"
+    echo "${UTL_SCHEDULE}"
+  fi
+
+fi
+
+if [ -f  ${ROOT}/bin/.crontab ];then 
+  rm  ${ROOT}/bin/.crontab
+fi
+
+exit 0

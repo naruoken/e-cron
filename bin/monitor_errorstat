@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+if [ -f /tmp/monitor_errorstat.tmp ];then
+  rm /tmp/monitor_errorstat.tmp
+fi
+
+for RHOST in `cat ${ROOT}/map.conf`
+do  
+  ENDPOINT_SET=`echo ${RHOST} | awk '{print $1}'`
+  ENDPOINT=`echo ${ENDPOINT_SET} | awk  -F":" '{print $1}'`
+
+  for FILE in `ls -t ${ROOT}/endpoints/${ENDPOINT}/que/monitor/*_error_* 2> /dev/null`
+  do
+    cat ${FILE} | sed -e "s/\$/ ${ENDPOINT}/g" | sort -V >> /tmp/monitor_errorstat.tmp
+  done
+
+done
+
+if [ -f /tmp/monitor_errorstat.tmp ];then
+  cat /tmp/monitor_errorstat.tmp | sort -V
+  rm /tmp/monitor_errorstat.tmp
+fi
+
+exit 0

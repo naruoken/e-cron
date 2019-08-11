@@ -1,0 +1,54 @@
+# STRUCTURE
+Jobwrapper can be distributed from console server to endpoints by below commands.And then each job status can be managed from console server.
+
+(job structure image)
+RepositoryA |- jobwrapperA (job_command,recovery_command)
+            |- jobwrapperB (job_command,recovery_command)
+
+# COMMAND USAGE
+You can confirm usage by typing each command without any parameter.
+
+# JOB CREATION AND DISTRIBUTION COMMANDS
+#------------------------------------------------------------------
+mkrepository             #create repository
+mkjobwrapper             #create jobwrapper
+edit_wrapper_prof        #edit jobwrapper profile with vi
+mkcontroller             #create controller for jobwrapper management
+add_endpoint             #add endpoint to e-cron console
+distribute_jobwrapper    #distribute jobwrapper to endpoint
+redistribute_jobwrapper  #distribute jobwrapper to endpoints which already have the jobwrapper
+enable_jobwrapper        #create cron entry on endpoint
+disable_jobwrapper       #delete cron entry on endpoint
+reschedule_jobwrapper    #update cron entry on endpoint
+rm_endpoint              #delete endpoint
+rm_jobwrapper            #disable jobwrapper at all endpoints and delete it
+rm_project               #delete project at all endpoint and delete it
+rm_endpoint              #delete endpoint from e-cron console
+#------------------------------------------------------------------
+
+# MANUAL EXECUTION COMMANDS
+#------------------------------------------------------------------
+run_jobwrapper           #run jobwrapper instantly
+kill_jobwrapper          #stop jobwrapper instantly
+#------------------------------------------------------------------
+
+# DISPLAY COMMANDS
+#------------------------------------------------------------------
+jobstat                  #display job status
+errorstat                #display jobwrapper error list
+daemon_errorstat         #display e-cron daemon error
+mirrorstat               #display sync status of each endpoints
+show_repository          #display repository list
+show_endpoints           #display endpoint list
+show_wrappers            #display jobwrapper list
+show_distributed_ep      #display list of endpoints per jobwrapper
+#------------------------------------------------------------------
+
+#ADDON UTILITY COMMANDS
+#--------------------------------------------------------------------
+monitor_errorstat        #display monitoring error
+monitor_stat             #display server status
+#----------------------------------------------------------------------
+
+If you execute e-cron commands without parameter,you can show usage
+doc: http://e-cron.org/get_started.html

@@ -1,0 +1,28 @@
+# Jobwrapper prof
+
+# If you don't define JOB_EXEC_USER, default will be ejobmgr 
+# JOB_EXEC_USER=root
+
+# SCHEDULE is same as cron scheudle
+# SCHEDULE: * * * * *
+SCHEDULE:
+
+# EXECUTE_COMMAND=/home/hoge/test.sh
+# EXECUTE_COMMAND=${JOBWRAPPER_HOME}/bat/test.sh
+EXECUTE_COMMAND=""
+RECOVERY_COMMAND=""
+
+# Message and resource lock function is optional
+# Below is example
+#
+# 1. TRIGGER MESSAGE
+# INPUT_MESSAGE="jobA_fin"
+INPUT_MESSAGE=""
+
+# 2. OUTPUT MESSAGE to localhost
+# OUTPUT_MESSAGE="jobB_fin"
+#
+# 3. OUTPUT MESSAGE to other endpoint
+# OUTPUT_MESSAGE="global::jobB_fin"
+# OUTPUT_MESSAGE="endpointA(IP or FQDN)::jobB_fin"
+OUTPUT_MESSAGE=""

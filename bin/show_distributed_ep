@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+REPOSITORY_JOBWRAPPER=$1
+
+if [ "${REPOSITORY_JOBWRAPPER}" = "" ];then
+  echo "usage is following"
+  echo "show_distributed_ep <REPOSITORY>/<JOBWRAPPER>"
+  exit 1
+fi
+
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+
+if [ ! -d ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER} -o "${JOBWRAPPER}" = "" ];then
+ echo "no such jobwrapper ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}"
+ exit 1
+fi
+
+
+while read RHOST
+do
+  ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
+  VERSION=latest
+  DIFF_CHECK=""
+
+  if [ -d ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} ];then
+
+    for FILE in ` ls -F ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} | grep -v controller | grep -v grep`
+    do
+      DIFF_CHECK=`diff  ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/${FILE} ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/${FILE}`
+      if [ "${DIFF_CHECK}" ];then
+         VERSION=old
+      fi
+    done
+
+    for FILE in ` ls -F ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/bat`
+    do
+      DIFF_CHECK=`diff  ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/bat/${FILE} ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/bat/${FILE}`
+      if [ "${DIFF_CHECK}" ];then
+         VERSION=old
+      fi
+    done
+
+
+    if [ -f ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list ];then
+      STATUS_CHECK=`grep "^${REPOSITORY} ${JOBWRAPPER}:" ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list`
+      STATUS=`echo ${STATUS_CHECK} | awk '{print $3}'`
+    fi
+
+    if [ "${STATUS_CHECK}" ];then
+      echo "${ENDPOINT} ${STATUS}        version:${VERSION}"
+    else
+      echo "${ENDPOINT} disabled        version:${VERSION}"
+    fi
+
+  fi
+
+done < ${ROOT}/map.conf
+
+exit 0

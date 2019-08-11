@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+FILTER=$1
+
+echo "You can set Filter like \"jobstat filter_word\""
+echo "------------------------------------------------------------------"
+echo "TIME                REPOSITORY JOBWRAPPER STATUS RESULT ENDPOINT" 
+echo "------------------------------------------------------------------"
+for RHOST in `cat ${ROOT}/map.conf`
+do  
+  ENDPOINT_SET=`echo ${RHOST} | awk '{print $1}'`
+  ENDPOINT=`echo ${ENDPOINT_SET} | awk  -F":" '{print $1}'`
+
+  for FILE in `ls -t ${ROOT}/endpoints/${ENDPOINT}/que/status`
+  do
+
+    if [ "${FILTER}" ];then
+      cat ${ROOT}/endpoints/${ENDPOINT}/que/status/${FILE} | sed -e "s/\$/ ${ENDPOINT}/g" | grep ${FILTER}| sort -V
+    else
+      cat ${ROOT}/endpoints/${ENDPOINT}/que/status/${FILE} | sed -e "s/\$/ ${ENDPOINT}/g" | sort -V
+    fi
+     
+    touch /tmp/jobstat.tmp
+  done
+
+done
+if [ ! -f /tmp/jobstat.tmp ];then
+  echo "No job result"
+else
+  rm /tmp/jobstat.tmp
+fi
+echo "------------------------------------------------------------------"
+echo "It will be take 1 min to sync status from endpoint to console"
+echo "If you want to know status quickly, please execute jobstat at endpoint"
+
+exit 0

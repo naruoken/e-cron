@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+ENDPOINT=$1
+if [ "${ENDPOINT}" = "" ];then
+ ENDPOINT=ALL
+fi
+
+
+if [ "${ENDPOINT}" != ALL ];then
+
+ if [ ! -d ${ROOT}/endpoints/${ENDPOINT} ];then
+   echo "${ENDPOINT} is not exist"
+   exit 1
+ fi
+
+
+  #load endpoint.conf
+  . ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+
+  if [ "${ENDPOINT}" != "localhost" ];then
+    ssh -p ${SSH_PORT} ${ENDPOINT} ${USER_ROOT}/bin/errorstat
+  else
+    ${USER_ROOT}/bin/errorstat
+  fi
+
+  exit 0
+
+fi
+
+if [ -f /tmp/job_errorstat.tmp ];then
+  rm /tmp/job_errorstat.tmp
+fi
+
+for RHOST in `cat ${ROOT}/map.conf`
+do
+  ENDPOINT_SET=`echo ${RHOST} | awk '{print $1}'`
+  ENDPOINT=`echo ${ENDPOINT_SET} | awk  -F":" '{print $1}'`
+
+  for FILE in `ls -t ${ROOT}/endpoints/${ENDPOINT}/que/error`
+  do
+    cat ${ROOT}/endpoints/${ENDPOINT}/que/error/${FILE} | sed -e "s/\$/ ${ENDPOINT}/g" >> /tmp/job_errorstat.tmp
+  done
+
+done
+
+if [ -f /tmp/job_errorstat.tmp ];then
+  cat /tmp/job_errorstat.tmp | sort -V
+fi
+
+
+exit 0

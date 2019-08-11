@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+
+REPOSITORY=$1
+JOBWRAPPER=$2
+JOBWRAPPER_HOME=${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}
+CONTROLLER_EXE=${JOBWRAPPER_HOME}/controller.sh
+JOBWRAPPER_LOG=${JOBWRAPPER_HOME}/log/jobwrapper_log_`date +%Y%m%d`
+
+if [ "${REPOSITORY}" = "" -o "${JOBWRAPPER}" = "" ];then
+ echo "usage: kill_jobwrapper.sh <REPOSITORY> <JOBWRAPPER>"
+ exit 1
+fi
+
+if [ ! -f ${JOBWRAPPER_HOME}/jobwrapper.prof ];then
+ echo "jobwrapper is not exist"
+ exit 1
+fi
+
+## kill process
+PID=`ps -ef | grep "/bin/sh ${CONTROLLER_EXE}" | grep -v grep | awk '{print $2}'`
+
+if [ $? = 0 ];then
+echo "-------------------------------------------------------------"
+  echo "jobwrapper ${JOBWRAPPER} killed succesfully"
+  echo "jobwrapper manually killed" >> ${JONET_LOG}
+echo "-------------------------------------------------------------"
+else
+  echo "kill_jobwrapper.sh failed"
+  exit 1
+fi
+
+exit 0

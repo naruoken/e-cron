@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+REPOSITORY_JOBWRAPPER=$1
+ENDPOINT=$2
+
+
+if [ "${REPOSITORY}" = "" -o "${ENDPOINT}" = "" ];then
+ echo "usage is following"
+ echo "kill_jobwrapper <REPOSITORY>/<JOBWRAPPER> <ENDPOINT>"
+ exit 1
+fi
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+if [ ! -d ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} -o "${JOBWRAPPER}" = "" ];then
+ echo "no such jobwrapper ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}"
+ exit 1
+fi
+
+## conf load
+. ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+
+
+## execute endpoint's kill_jobwrapper
+if [ ! -d ${ROOT}/endpoints/${ENDPOINT} ];then
+ echo "${ENDPOINT} is not exist"
+ exit 1
+fi
+
+
+if [ "${ENDPOINT}" != "localhost" ];then
+  ssh -p ${SSH_PORT} ${ENDPOINT} ${USER_ROOT}/bin/kill_jobwrapper ${REPOSITORY} ${JOBWRAPPER}
+else
+  ${USER_ROOT}/bin/kill_jobwrapper ${REPOSITORY} ${JOBWRAPPER}
+fi
+
+if [ $? = 0 ];then
+  echo "jobwrapper ${JOBWRAPPER} scuccessfully killed"
+else
+  echo "jobwrapper ${JOBWRAPPER} failed to kill"
+fi
+
+exit 0

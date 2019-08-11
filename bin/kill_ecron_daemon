@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+DAEMON_ENT=${ROOT}/utilities/ecron_daemon_check.sh
+
+## daemon check
+for DAEMON in ecron_mirrord
+do
+
+  PID=`ps -ef | grep ${DAEMON} | grep -v grep | awk '{print $2}'`
+  if [ "${PID}" ];then
+    kill ${PID}
+    if [ -f /tmp/${DAEMON}_lock ];then
+      rm /tmp/${DAEMON}_lock 
+    fi
+  fi
+
+done
+
+## create cron entry
+
+crontab -l > ${ROOT}/bin/.crontab
+
+DAEMON_UTILITY_CHECK=`grep "${DAEMON_ENT}" ${ROOT}/bin/.crontab`
+
+if [ "${DAEMON_UTILITY_CHECK}" ];then
+  cat  ${ROOT}/bin/.crontab | grep -v ${DAEMON_ENT} > ${ROOT}/bin/.crontab.tmp
+  crontab ${ROOT}/bin/.crontab.tmp
+
+  if [ $? != 0 ];then
+    echo "daemon entry is bad"
+  fi
+
+fi
+
+if [ -f  ${ROOT}/bin/.crontab ];then 
+  rm  ${ROOT}/bin/.crontab
+  rm  ${ROOT}/bin/.crontab.tmp
+fi
+
+exit 0

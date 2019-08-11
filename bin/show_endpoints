@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# global.conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+echo "Endpoint list"
+echo "------------------------------"
+ls ${ROOT}/endpoints
+echo "------------------------------"
+
+exit 0

@@ -1,0 +1,48 @@
+#!/bin/sh
+
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+MON_ENDPOINT=$1
+if [ "${MON_ENDPOINT}" = "" ];then
+ MON_ENDPOINT=ALL
+fi
+
+IFCONFIG=/usr/sbin/ifconfig
+LINUX=`uname -a | grep Linux`
+if [ "${LINUX}" ];then
+  IFCONFIG=/sbin/ifconfig
+fi
+
+
+if [ -f /tmp/monitor_stat.tmp ];then
+  rm /tmp/monitor_stat.tmp
+fi
+
+echo "STATUS LIST" 
+for RHOST in `cat ${ROOT}/map.conf`
+do  
+  ENDPOINT_SET=`echo ${RHOST} | awk '{print $1}'`
+  ENDPOINT=`echo ${ENDPOINT_SET} | awk  -F":" '{print $1}'`
+
+  for FILE in `ls -t ${ROOT}/endpoints/${ENDPOINT}/que/monitor/ | grep -v _error`
+  do
+    cat  ${ROOT}/endpoints/${ENDPOINT}/que/monitor/${FILE} | sed -e "s/\$/ ${ENDPOINT}/g" | sort -r -k 3 >> /tmp/monitor_stat.tmp
+  done
+
+done
+
+if [ -f /tmp/monitor_stat.tmp ];then
+  if [ "${MON_ENDPOINT}" = ALL ];then
+    cat /tmp/monitor_stat.tmp | sort -r
+    rm /tmp/monitor_stat.tmp
+  else
+    cat /tmp/monitor_stat.tmp | sort -r | grep ${MON_ENDPOINT}
+    rm /tmp/monitor_stat.tmp
+  fi
+fi
+
+exit 0

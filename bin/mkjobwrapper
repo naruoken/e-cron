@@ -1,0 +1,86 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+## repository input
+echo "please input repository name"
+read REPOSITORYNAME
+
+if [ ! -d ${ROOT}/repository/${REPOSITORYNAME} ];then
+ echo "repository is not exist"
+ exit 1
+fi
+
+## jobwrapper input
+echo "please input jobwrapper name"
+read JOBWRAPPERNAME
+
+if [ "$JOBWRAPPERNAME" = "" ];then
+ echo "jobwrapper name is null"
+ exit 1
+fi
+
+if [ -d ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME} ];then
+echo "jobwrapper is already exist"
+exit 1
+fi
+
+## create log dir
+mkdir -p ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}
+if [ $? != 0 ];then
+ echo "ERROR you can't create ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}"
+ exit 1
+fi
+
+chmod 755 ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}
+if [ $? != 0 ];then
+ echo "ERROR you can't change permission ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}"
+ exit 1
+fi
+
+## create log dir
+mkdir -p ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/log
+if [ $? != 0 ];then
+ echo "ERROR you can't create ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/log"
+ exit 1
+fi
+
+chmod 755 ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/log
+if [ $? != 0 ];then
+ echo "ERROR you can't change permission ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/log"
+ exit 1
+fi
+
+## create bat dir
+mkdir -p ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/bat
+if [ $? != 0 ];then
+ echo "ERROR you can't create ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/bat"
+ exit 1
+fi
+
+chmod 755 ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/bat
+if [ $? != 0 ];then
+ echo "ERROR you can't change permission ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}/bat"
+ exit 1
+fi
+
+
+cp ${ROOT}/template/* ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}
+
+
+echo "-------------------------------------------------------------"
+echo "Jobwrapper create succesfully. "
+echo "Please edit profile by \"edit_jobwrapper_prof ${REPOSITORYNAME}/${JOBWRAPPERNAME}\""
+echo "Jobwrapper dir is ${ROOT}/repository/${REPOSITORYNAME}/${JOBWRAPPERNAME}"
+echo "-------------------------------------------------------------"
+exit 0

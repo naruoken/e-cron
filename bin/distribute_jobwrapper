@@ -1,0 +1,105 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+REPOSITORY_JOBWRAPPER=$1
+ENDPOINT=$2
+
+if [ "${REPOSITORY_JOBWRAPPER}" = "" -o "${ENDPOINT}" = "" ];then
+  echo "usage is following"
+  echo "distribute_jobwrapper <REPOSITORY>/<JOBWRAPPER> <ENDPOINT>"
+  exit 1
+fi
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+
+if [ ! -d "${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}" ];then
+  echo "ERROR no such jobwrapper"
+  exit 1
+fi
+
+if [ ! -f "${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/controller.sh" ];then
+  echo "ERROR please execute mkcontroller beforehand"
+  exit 1
+fi
+
+
+## endpoint dir create
+if [ ! -d "${ROOT}/endpoints/${ENDPOINT}" ];then
+  echo "please execute add_endpoint beforehand"
+  exit 1
+fi
+
+## distribute local to local
+if [ ! -d  ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} ];then
+  mkdir -p ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}
+fi
+
+cp -prf ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/* ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/ 
+
+
+## distribute to endpoint
+SSH_PORT=`grep ${ENDPOINT}: ${ROOT}/map.conf | awk -F":" '{print $2}'`
+. ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+
+if [ "${ENDPOINT}" != "localhost" ];then
+
+  ssh -p ${SSH_PORT} ${ENDPOINT} ls ${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER} 2> /dev/null
+  if [ $? != 0 ];then
+    ssh -p ${SSH_PORT} ${ENDPOINT} mkdir -p ${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}
+  fi
+
+    scp -o "ConnectTimeout 5" -pr -P ${SSH_PORT} ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/* ${ENDPOINT}:${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/
+
+  if [ $? != 0 ];then
+    echo "ERROR: scp -pr -P ${SSH_PORT} ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/* ${ENDPOINT}:${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/ "
+    exit 1
+  fi
+
+else
+
+  if [ ! -d ${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER} ];then
+    mkdir -p ${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}
+  fi
+
+  cp -prf ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/* ${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/
+
+  if [ $? != 0 ];then
+    echo "ERROR:cp -prf ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER}/* ${USER_ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/"
+    exit 1
+  fi
+fi
+
+
+## jobwrapper_list update
+if [ -f ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list ];then
+  grep  "^${REPOSITORY} ${JOBWRAPPER}:" ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list
+  
+  if [ $? != 0 ];then
+    echo "${REPOSITORY} ${JOBWRAPPER}: disabled" >> ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list
+  fi
+
+else
+
+  echo "${REPOSITORY} ${JOBWRAPPER}: disabled" >> ${ROOT}/endpoints/${ENDPOINT}/jobwrapper_list
+
+fi
+
+echo "-----------------------------------"
+echo "${REPOSITORY} ${JOBWRAPPER} succesfully distributed to ${ENDPOINT}"
+echo "-----------------------------------"
+
+exit 0

@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+REPOSITORY_JOBWRAPPER=$1
+ENDPOINT=$2
+
+if [ "${REPOSITORY_JOBWRAPPER}" = "" -o "${ENDPOINT}" = "" ];then
+  echo "usage is following"
+  echo "pattern A: redistribute <REPOSITORY>/<JOBWRAPPER> <ENDPOINT>"
+  echo "pattern B: redistribute <REPOSITORY>/<JOBWRAPPER> ALL"
+  exit 1
+fi
+
+REPOSITORY=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $1}'`
+JOBWRAPPER=`echo "${REPOSITORY_JOBWRAPPER}" | awk -F"/" '{print $2}'`
+
+if [ ! -d "${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}" -o "${JOBWRAPPER}" = "" ];then
+  echo "ERROR no such jobwrapper"
+  exit 1
+fi
+
+if [ ! -f "${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/controller.sh" ];then
+  echo "ERROR please execute mkcontroller beforehand"
+  exit 1
+fi
+
+if [ "${ENDPOINT}" = "ALL" ];then
+  while read RHOST
+  do
+    ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
+
+    if [ -d ${ROOT}/endpoints/${ENDPOINT}/repository/${REPOSITORY}/${JOBWRAPPER} ];then
+      ${ROOT}/bin/distribute_jobwrapper ${REPOSITORY}/${JOBWRAPPER} ${ENDPOINT}
+    fi
+
+  done < ${ROOT}/map.conf
+
+else
+
+  ${ROOT}/bin/distribute_jobwrapper ${REPOSITORY}/${JOBWRAPPER} ${ENDPOINT}
+
+fi
+
+exit 0

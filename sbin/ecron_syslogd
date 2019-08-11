@@ -1,0 +1,47 @@
+#!/bin/sh
+
+## global conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+ . ${SCRIPT_DIR}/../global.conf
+
+## process check
+if [ -f /tmp/ecron_syslogd_lock ];then
+  exit 0
+else
+  touch /tmp/ecron_syslogd_lock
+fi
+
+## global.conf load
+startup () {
+ . ${SCRIPT_DIR}/../global.conf
+}
+trap startup HUP
+startup
+
+ECRON_SYSLOG=${ROOT}/log/syslog.log
+SYSLOG_MESSAGE=${ROOT}/sbin/.syslogd_detected_message
+echo "`date +%Y/%m/%d` `date +%H:%M:%S` ecron_syslgd startd" >>  ${DAEMON_LOG}
+
+while true
+do
+ . ${SCRIPT_DIR}/../global.conf
+ UNAME=`uname -n`
+
+ if [ -f ${SYSLOG_MESSAGE} ];then
+   ${ROOT}/bin/errorstat > ${SYSLOG_MESSAGE}.tmp
+   ${ROOT}/bin/monitor_errorstat > ${SYSLOG_MESSAGE}.tmp
+   ${ROOT}/bin/daemon_errorstat >> ${SYSLOG_MESSAGE}.tmp
+   diff ${SYSLOG_MESSAGE} ${SYSLOG_MESSAGE}.tmp | grep "^> " | sed -e 's/> //g' > ${SYSLOG_MESSAGE}.diff
+   mv ${SYSLOG_MESSAGE}.tmp ${SYSLOG_MESSAGE}
+ else
+   ${ROOT}/bin/errorstat > ${SYSLOG_MESSAGE} 
+   ${ROOT}/bin/daemon_errorstat >> ${SYSLOG_MESSAGE} 
+   cp ${SYSLOG_MESSAGE} ${SYSLOG_MESSAGE}.diff
+ fi
+ 
+ cat ${SYSLOG_MESSAGE}.diff >> ${ECRON_SYSLOG}
+
+ sleep 12
+
+done

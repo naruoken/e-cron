@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# conf load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+CHECK=`ls -t ${ROOT}/que/endpoint_status/`
+
+if [ "${CHECK}" = "" ];then
+  echo "No endoint"
+fi
+for FILE in `ls -tr ${ROOT}/que/endpoint_status`
+do
+  cat ${ROOT}/que/endpoint_status/${FILE} 
+done

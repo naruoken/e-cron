@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+if [ ! -d "${ROOT}/que/status" ];then
+ echo "ERROR user is not correct, please execute job user"
+ echo "usage:jobstat.sh"
+exit 1
+fi
+
+echo "------------------------------------------------------------------"
+echo "TIME                REPOSITORY JOBWRAPPER STATUS RESULT"
+echo "------------------------------------------------------------------"
+cat ${ROOT}/que/status/*  2> /dev/null | sort -V

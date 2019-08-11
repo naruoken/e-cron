@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# .root load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../.root
+
+DISABLE_JOBS=no
+
+
+if [ ! -d "${ROOT}/que/error" ];then
+ echo "ERROR user is not correct, please execute this command by job user"
+exit 1
+fi
+
+crontab -l > ${SCRIPT_DIR}/.crontab
+chmod 766 ${SCRIPT_DIR}/.crontab
+
+for DISABLE_JOB in `find ${ROOT}/repository -name controller.sh`
+do
+
+  CRON_CHECK=`grep ${DISABLE_JOB} ${SCRIPT_DIR}/.crontab`
+  if [ "${CRON_CHECK}" = "" ];then
+    echo ${DISABLE_JOB}
+    DISABLE_JOBS=yes
+  fi
+
+done
+
+
+if [ "${DISABLE_JOBS}" = "no" ];then
+ echo "There is no disable jobwrapper"
+fi

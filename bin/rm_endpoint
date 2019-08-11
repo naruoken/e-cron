@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# user check
+USER=`whoami`
+if [ "${USER}" != "ejobmgr" ];then
+  echo "please execute this command as ejobmgr"
+  exit 1
+fi
+
+# global.cof load
+LANG=C;export LANG
+SCRIPT_DIR=`dirname $0`
+. ${SCRIPT_DIR}/../global.conf
+
+
+ENDPOINT=$1
+
+if [ "${ENDPOINT}" = "" ];then
+  echo "usage is following"
+  echo "rm_endpoint <ENDPOINT>"
+  exit 1
+fi
+
+
+if [ ! -d "${ROOT}/endpoints/${ENDPOINT}" ];then
+  echo "ERROR no such endpoint"
+  exit 1
+fi
+
+## jobwrapper input
+echo "You will remove ${ENDPOINT} from e-cron console,is it OK?"
+echo "If no problem please type \"yes\""
+read ANSWER
+
+if [ ! "${ANSWER}" = "yes" ];then
+  echo "${ENDPOINT} is not deleted"
+  exit 1
+fi
+
+. ${ROOT}/endpoints/${ENDPOINT}/endpoint.conf
+ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} ${USER_ROOT}/bin/disable_all_jobwrapper
+#ssh -o "ConnectTimeout 5" -p ${SSH_PORT} ${ENDPOINT} rm -rm ${USER_ROOT}
+cat ${ROOT}/map.conf | grep -v ${ENDPOINT}: > ${ROOT}/map.conf.tmp
+mv ${ROOT}/map.conf.tmp ${ROOT}/map.conf
+rm -rf ${ROOT}/endpoints/${ENDPOINT}
+
+exit 0
