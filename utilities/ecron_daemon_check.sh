@@ -30,7 +30,7 @@ do
 
     ${ROOT}/sbin/${DAEMON} &
 
-    sleep 2
+    sleep 6
 
     DAEMON_CHECK=`ps -ef | grep ${ROOT}/sbin/${DAEMON} | grep -v grep`
     if [ "${DAEMON_CHECK}" = "" ];then
