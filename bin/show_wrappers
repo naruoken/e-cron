@@ -14,7 +14,7 @@ do
   for JOBWRAPPER in `ls ${ROOT}/repository/$REPOSITORY`
   do
     echo "$REPOSITORY/$JOBWRAPPER"
-    echo " |-dir: ${ROOT}/${REPOSITORY}/${JOBWRAPPER}"
+    echo " |-dir: ${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}"
     echo ""
   done
   
