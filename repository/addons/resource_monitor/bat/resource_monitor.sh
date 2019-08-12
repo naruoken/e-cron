@@ -86,8 +86,8 @@ fi
 ## memory resource get
 TOTAL=`free | grep Mem | awk '{print $2}'`
 USED=`free | grep Mem | awk '{print $3}'`
+USED=`expr ${USED} \* 100`
 MEMORY_USAGE=`expr ${USED} / ${TOTAL}`
-MEMORY_USAGE=`expr ${MEMORY_USAGE} \* 100`
 MEMORY_USAGE=`echo ${MEMORY_USAGE} | awk -F"." '{print $1}'`
 
 echo "`date +%T` ${MEMORY_USAGE}" >> ${MEMORY_LOG}
