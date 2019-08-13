@@ -26,16 +26,18 @@ fi
 ## endpoint dir create
 if [ ! -d "${ROOT}/endpoints/${ENDPOINT}" ];then
   FLAG=NEW
-  echo "please input endpoint ssh port number(default is port:22)"
-  read SSH_PORT
 
-  if [ "${SSH_PORT}" = "" ];then
-    SSH_PORT=22
-  fi
 
   ## check endpoint
 
   if [ "${ENDPOINT}" != "localhost" ];then
+
+    echo "please input endpoint ssh port number(default is port:22)"
+    read SSH_PORT
+
+    if [ "${SSH_PORT}" = "" ];then
+      SSH_PORT=22
+    fi
 
     USER_HOME=`ssh $ENDPOINT echo $HOME`
     USER_ROOT=$USER_HOME/e-cron
@@ -62,11 +64,12 @@ if [ ! -d "${ROOT}/endpoints/${ENDPOINT}" ];then
 
   else
 
+    USER_ROOT=${HOME}/e-cron
     if [ ! -d ${USER_ROOT} ];then
-      USER_ROOT=${HOME}/e-cron
       mkdir  ${USER_ROOT}
       chown ejobmgr  ${USER_ROOT}
       cp -pr ${ROOT}/distribute_template/* ${USER_ROOT}/
+      SSH_PORT=null
 
       if [ $? != 0 ];then
         echo "ERROR cp -pr ${ROOT}/distribute_template/* ${USER_ROOT}/ !!"
