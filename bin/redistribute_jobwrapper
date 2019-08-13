@@ -37,7 +37,7 @@ if [ ! -f "${ROOT}/repository/${REPOSITORY}/${JOBWRAPPER}/controller.sh" ];then
 fi
 
 if [ "${ENDPOINT}" = "ALL" ];then
-  while read RHOST
+  for RHOST in `cat ${ROOT}/map.conf`
   do
     ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
 
@@ -45,7 +45,7 @@ if [ "${ENDPOINT}" = "ALL" ];then
       ${ROOT}/bin/distribute_jobwrapper ${REPOSITORY}/${JOBWRAPPER} ${ENDPOINT}
     fi
 
-  done < ${ROOT}/map.conf
+  done
 
 else
 
