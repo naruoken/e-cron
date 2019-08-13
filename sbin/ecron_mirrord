@@ -29,7 +29,7 @@ do
  UNAME=`uname -n`
  ERROR_QUE=${ROOT}/que/daemon_error/${UNAME}_`date +%Y%m%d`
 
- while read RHOST
+ for RHOST in `cat ${ROOT}/map.conf`
  do
 
  ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
@@ -95,7 +95,7 @@ do
   fi
 
 
- done < ${ROOT}/map.conf
+ done
 
  sleep 12
 

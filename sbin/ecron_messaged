@@ -26,8 +26,7 @@ echo "`date +%Y/%m/%d` `date +%H:%M:%S` messaged startd" >>  ${DAEMON_LOG}
 while true
 do
  ## SEND MESSAGE TO END POINT
-
- while read RHOST
+ for RHOST in `cat ${ROOT}/map.conf`
  do
 
  ENDPOINT=`echo ${RHOST} | awk  -F":" '{print $1}'`
@@ -67,7 +66,7 @@ do
 
   fi
 
- done < ${ROOT}/map.conf
+ done
 
  for FILE in `ls ${ROOT}/que/send_message/*::* | xargs -i basename {}`
  do
