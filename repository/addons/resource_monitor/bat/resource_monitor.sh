@@ -13,7 +13,7 @@ QUE_DIR=${SCRIPT_DIR}/../../../../que
 MONITOR_ERROR_QUE=${QUE_DIR}/monitor/${UNAME}_error_`date +%Y%m%d`
 MONITOR_STATUS_QUE_CPU=${QUE_DIR}/monitor/${UNAME}_cpu_status
 MONITOR_STATUS_QUE_MEMORY=${QUE_DIR}/monitor/${UNAME}_memory_status
-MONITOR_STATUS_QUE_DISK=${QUE_DIR}/monitor/${UNAMAE}_${FILE_SYSTEM_NAME}_disk_status
+MONITOR_STATUS_QUE_DISK=${QUE_DIR}/monitor/${UNAME}_disk_status
 
 ## conf load
 . ${SCRIPT_DIR}/monitor.conf
