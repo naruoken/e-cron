@@ -35,7 +35,7 @@ else
   rm /tmp/jobstat.tmp
 fi
 echo "------------------------------------------------------------------"
-echo "It will be take 1 min to sync status from endpoint to console"
+echo "Only executed jobs are listed here and it will take around 1 min to sync status from endpoint to console."
 echo "If you want to know status quickly, please execute jobstat at endpoint"
 
 exit 0
