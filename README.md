@@ -7,7 +7,7 @@ Functions are as following.
 These are written by light scripts and works quickly with basic unix commands.
 So it will be recommended to use this framework to Linux base IoT endpoints management as well.
 
-1.Sigle Command Line Interface
+1.Single CLI console
 ----------------------------
  You can distribute same batch file to each endpoints and can watch the results at console server.
 
